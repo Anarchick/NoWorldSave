@@ -1,0 +1,72 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation
+
+plugins {
+    id 'java'
+    id 'eclipse'
+    id 'com.github.johnrengelman.shadow' version '7.1.0'
+}
+
+eclipse {
+    project {
+        name = 'noWorldSave'
+    }
+}
+
+configurations {
+    shade
+    compile.extendsFrom shade
+}
+
+repositories {
+    maven { url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots' } // Spigot
+    maven { url "https://libraries.minecraft.net" }
+    maven { url 'https://jitpack.io' }
+    mavenCentral()
+    jcenter()
+}
+
+sourceCompatibility = 1.16
+targetCompatibility = 1.16
+
+dependencies {
+
+    shadow localGroovy()
+    shadow gradleApi()
+
+    compileOnly group: 'org.spigotmc', name: 'spigot-api', version: '1.17.1-R0.1-SNAPSHOT'
+    compileOnly group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.annotation', version: '2.2.600'
+    implementation group: 'org.javassist', name: 'javassist', version: '3.27.0-GA'
+    shade (group: 'org.javassist', name: 'javassist', version: '3.27.0-GA')
+    //compileOnly group: 'org.ow2.asm', name: 'asm', version: '6.0'
+}
+
+jar {
+    archiveBaseName  = 'noWorldSave'
+    configurations.shade.each { dep ->
+        from(project.zipTree(dep)){
+            exclude 'META-INF', 'META-INF/**'
+            exclude '**/*.yml'
+        }
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+task export() {
+    group = "export"
+    description = "build gradle into external folder"
+    doLast {
+        copy {
+            from jar // here it automatically reads jar file produced from jar task
+            into "C:/Users/aeim/Documents/minecraft/btooomJava/plugins"
+        }
+    }
+}
+
+tasks.withType( JavaCompile ).configureEach {
+    options.forkOptions.jvmArgs.addAll( ['--add-opens', 'jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED'] )
+}
+
+build.finalizedBy export

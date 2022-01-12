@@ -1,0 +1,9 @@
+name: noWorldSave
+author: Anarchick
+description: Disable chunk saves
+version: 1.0
+api-version: 1.16
+load: POSTWORLD
+main: fr.anarchick.noworldsave.Main
+depend: []
+softdepend: []

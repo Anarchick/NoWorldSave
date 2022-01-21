@@ -1,5 +1,6 @@
 package fr.anarchick.noworldsave;
 
+import java.lang.instrument.ClassDefinition;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
@@ -8,6 +9,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 
 import fr.anarchick.agent.Agent;
+import fr.anarchick.agent.AgentJar;
 import fr.anarchick.agent.AgentLoader;
 import groovyjarjarantlr4.v4.runtime.misc.NotNull;
 import javassist.ClassPool;
@@ -20,6 +22,7 @@ public class Main extends JavaPlugin {
 	private static String NMS_CLASS = "net.minecraft.server.level.ChunkProviderServer";
 	private static String NMS_SAVE_METHOD = "save";
 	private static String PATCH_METHOD_BODY = "{ System.out.println(\"Trying to save chunk!\"); }";
+	private static Agent agent = null;
 	
 	@Override
 	public void onEnable() {
@@ -27,26 +30,30 @@ public class Main extends JavaPlugin {
 			throw new IllegalStateException("Plugin initialized twice.");
 		}
 		instance = this;
-		AgentLoader.loadAgent();
+		//AgentJar.createAgentJar();
+		//AgentLoader.loadAgent();
 		BukkitScheduler scheduker = Bukkit.getScheduler();
+		agent = Agent.getAgent();
 		scheduker.runTaskLater(instance, () -> {
-			Logging.info("Agent ? " + Agent.getAgent());
+			Logging.info("Main loader : " + getClass().getClassLoader());
+			Logging.info("Agent in Main loader : " + Agent.class.getClassLoader());
+			Logging.info("Agent ? " + agent);
 		}, 1L);
-		//patch();
+		patch();
 	}
 	
 	static public Main getInstance( ) {
 		return instance;
 	}
 	
-	public static void patch(@NotNull Agent agent) {
+	public static void patch() {
 		ClassPool cp = ClassPool.getDefault();
 		try {
 			Class<?> clz = Class.forName(NMS_CLASS);
 			CtClass ctClass = cp.get(NMS_CLASS);
 			CtMethod saveMethod = getMethod(ctClass, NMS_SAVE_METHOD);
 			saveMethod.setBody(PATCH_METHOD_BODY);
-			agent.redefineClasses(clz, ctClass);
+			redefineClasses(clz, ctClass);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -75,6 +82,16 @@ public class Main extends JavaPlugin {
 	@Override
 	public void onDisable() {
 		Agent.killAgent();
+	}
+	
+	private static void redefineClasses(Class<?> oldClass, CtClass newClass) {
+		try {
+			System.out.println("try to redefine class '"+oldClass.getName()+"'");
+            Agent.getInstrumentation().redefineClasses(new ClassDefinition(oldClass, newClass.toBytecode()));
+        } catch (Exception e) {
+        	System.out.println("Failed to redefine class!");
+        	e.printStackTrace();
+        }
 	}
 	
 }

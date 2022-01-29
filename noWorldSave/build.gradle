@@ -48,6 +48,15 @@ jar {
             exclude '**/*.yml'
         }
     }
+    
+    manifest {
+        attributes(
+                   "Premain-Class": "fr.anarchick.agent.Agent",
+                    "Agent-Class": "fr.anarchick.agent.Agent",
+                    "Can-Retransform-Classes": "true",
+                    "Can-Redefine-Classes": "true"
+                    )
+    }
 }
 
 tasks.withType(JavaCompile) {
@@ -60,7 +69,7 @@ task export() {
     doLast {
         copy {
             from jar // here it automatically reads jar file produced from jar task
-            into "C:/Users/aeim/Documents/minecraft/btooomJava/plugins"
+            into "C:/Users/aeim/Documents/minecraft/btooomJava"
         }
     }
 }
